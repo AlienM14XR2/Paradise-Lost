@@ -8,9 +8,9 @@
 
 ## 外部と何か行う仕組み
 
-Client Server モデルなのかな。言い方はどうあれ、Client と Server で開発言語の壁を取り除ければ良い。Client 側の理想は
+Client Server モデルなのかな。言い方はどうあれ、Client と Server で開発言語の壁を取り除ければ良い。
 
-JavaScript であり Server 側は C/C++ を使いたい。
+Client 側の理想は JavaScript であり Server 側は C/C++ を使いたい。
 
 - WebAssembly
 - CGI (FCGI)   HTTP(S)
