@@ -41,8 +41,14 @@ public:
 
 class CreatePersonCtl final : public Controller<json> {
 public:
+    static Controller<json>* factory(const std::string& uri) {
+        if(uri == "/api/create/person/" || uri == "/hello_world/create/person") {
+            return new CreatePersonCtl();
+        }
+        return nullptr;
+    }
     virtual json execute() const override {
-        puts("=== CreatePersonCtl::execute()");
+        puts("------ CreatePersonCtl::execute()");
         // TODO 実装
         return json();
     } 
@@ -57,8 +63,13 @@ int test_CreatePersonCtl() {
      * 必要があると思っている。
     */
     try {
-        Controller<json>* ctl = new CreatePersonCtl();
-        ctl->execute();
+        Controller<json>* ctl = CreatePersonCtl::factory("/api/foo/bar/");
+        if(ctl) {            
+        } else {
+            puts("First ... mistake, no match URI.");
+            ctl = CreatePersonCtl::factory("/api/create/person/");
+            ctl->execute();
+        }
         delete ctl;
         return EXIT_SUCCESS;
     } catch(std::exception& e) {
