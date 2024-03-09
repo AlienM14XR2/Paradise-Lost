@@ -1,3 +1,10 @@
+tmp/
+bin/
+build/
+logs/
+*.o
+*.log
+
 ### AL ###
 #Template for AL projects for Dynamics 365 Business Central
 #launch.json folder
