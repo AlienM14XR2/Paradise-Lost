@@ -2,10 +2,17 @@
  * REST API
  * 
  * fcgi を用いたエンドポイントに該当する。
- * 
+ *  
  * e.g. compile.
- * g++ -O3 -DDEBUG -std=c++20 -pedantic-errors -Wall -Werror -I../inc/ main.cpp -lfcgi++ -lfcgi -o ../bin/api
+ * g++ -O3 -DDEBUG -std=c++20 -pedantic-errors -Wall -Werror -I../inc/ main.cpp -lfcgi++ -lfcgi -o ../bin/endpoint
+ * 
+ * e.g. プロセス起動
+ * spawn-fcgi -p 9900 -n endpoint
+ * 
+ * e.g. curl でアクセス
+ * curl -i -s -X POST -d 'this is the post content.' http://localhost/api/create/person/
 */
+#include <iostream>
 #include <string>
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,7 +23,8 @@
 
 
 int main(void) {
-    puts("=== START REST API");
+    std::cout << "START REST API" << std::endl;
+    // puts("=== START REST API");
     int count = 0;      // これが答えだったか、何らかのオブジェクトを Pool するならここで行い
     while(FCGI_Accept() >= 0)
     {
@@ -30,5 +38,6 @@ int main(void) {
     }
     // while を抜けた際に、取得したメモリは解放する
     puts("END   REST API ===");
+    std::cout << "END REST API" << std::endl;
     return 0;
 }
