@@ -4,7 +4,7 @@
  * fcgi を用いたエンドポイントに該当する。
  *  
  * e.g. compile.
- * g++ -O3 -DDEBUG -std=c++20 -pedantic-errors -Wall -Werror -I../inc/ main.cpp -lfcgi++ -lfcgi -o ../bin/endpoint
+ * g++ -O3 -DDEBUG -std=c++20 -pedantic-errors -Wall -Werror -I../inc/ -I/home/jack/dev/c++/HandsOn/ORM-Cheshire/inc/ -I/usr/include/mysql-cppconn-8/ -L/usr/lib/x86_64-linux-gnu/ main.cpp -lmysqlcppconn -lmysqlcppconn8 -lfcgi++ -lfcgi -o ../bin/endpoint
  * 
  * e.g. プロセス起動
  * spawn-fcgi -p 9900 -n endpoint
@@ -14,6 +14,7 @@
 */
 #include <iostream>
 #include <string>
+#include <memory>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,9 +24,38 @@
 
 #include "rest_api_debug.hpp"
 
+// ORM
+#include <mysql/jdbc.h>
+#include "ConnectionPool.hpp"
+#include "MySQLDriver.hpp"
+
+// namespace cheshire {
+
+// ConnectionPool<sql::Connection> app_cp;
+
+// void mysql_connection_pool(const std::string& server, const std::string& user, const std::string& password, const int& sum) 
+// {
+//     sql::Driver* driver = MySQLDriver::getInstance().getDriver();
+//     for(int i=0; i<sum; i++) {
+//         sql::Connection* con = driver->connect(server, user, password);
+//         if(con->isValid()) {
+//             puts("connected ... ");
+//             con->setSchema("cheshire");
+//             // auto commit は true としておく、Tx が必要な場合はリポジトリで明確にすること。あるいは MySQLTx を利用すること。
+//             app_cp.push(con);
+//         } else {
+//             puts("connection is invalid ... ");            
+//         }
+//     }
+// }
+
+// }   // end namespace cheshire
+
+
 int main(void) {
     std::cout << "START REST API" << std::endl;
     try {
+        // cheshire::mysql_connection_pool("tcp://127.0.0.1:3306", "derek", "derek1234", 10);
         int count = 0;      // これが答えだったか、何らかのオブジェクトを Pool するならここで行い
         while(FCGI_Accept() >= 0)
         {
