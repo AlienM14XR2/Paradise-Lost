@@ -1,8 +1,9 @@
 #ifndef _CREATEPERSONCTL_H_
 #define _CREATEPERSONCTL_H_
 
-#include "nlohmann/json.hpp"
 #include "Controller.hpp"
+#include "nlohmann/json.hpp"
+#include "mysql/jdbc.h"
 
 class CreatePersonCtl final : public Controller<nlohmann::json> {
 public:

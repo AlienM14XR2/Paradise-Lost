@@ -2,6 +2,7 @@
  * サーバを介さないテストを行う。
  * 
  * e.g. compile.
+ * 
  * g++ -O3 -DDEBUG -std=c++20 -pedantic-errors -Wall -Werror -I../inc/ -I/home/jack/dev/c++/HandsOn/ORM-Cheshire/inc/ -I/usr/include/mysql-cppconn-8/ -L/usr/lib/x86_64-linux-gnu/ test.cpp -lmysqlcppconn -lmysqlcppconn8 ~/cheshire-bin/PersonRepository.o ~/cheshire-bin/sql_generator.o ~/cheshire-bin/PersonStrategy.o ~/cheshire-bin/PersonData.o ~/cheshire-bin/MySQLConnection.o -o ../bin/test
 */
 #include <iostream>
@@ -131,12 +132,28 @@ int test_mock_personData() {
  * 設計・実装はここから
 */
 
-extern ConnectionPool<sql::Connection> cheshire::app_cp;
+namespace cheshire {
 
+ConnectionPool<sql::Connection> app_cp;
 
-using json = nlohmann::json;
+void mysql_connection_pool(const std::string& server, const std::string& user, const std::string& password, const int& sum);
 
-
+}   // end namespace cheshire
+void cheshire::mysql_connection_pool(const std::string& server, const std::string& user, const std::string& password, const int& sum) 
+{
+    sql::Driver* driver = get_driver_instance();//MySQLDriver::getInstance().getDriver();
+    for(int i=0; i<sum; i++) {
+        sql::Connection* con = driver->connect(server, user, password);
+        if(con->isValid()) {
+            ptr_api_debug<const char*, const int&>("connected ... ", 0);
+            con->setSchema("cheshire");
+            // auto commit は true としておく、Tx が必要な場合はリポジトリで明確にすること。あるいは MySQLTx を利用すること。
+            app_cp.push(con);
+        } else {
+            ptr_api_debug<const char*, const int&>("connection is invalid ... ", 1);
+        }
+    }
+}
 
 Controller<nlohmann::json>* CreatePersonCtl::factory(const std::string& uri, const char* _json)
 {
@@ -203,11 +220,11 @@ nlohmann::json CreatePersonCtl::execute() const
         return result;
     } catch(std::exception& e) {
         ptr_api_error<const decltype(e)&>(e);
-        return json();
+        return nlohmann::json();
     }
 }
 
-
+using json = nlohmann::json;
 
 int test_CreatePersonCtl() {
     puts("=== test_CreatePersonCtl");
