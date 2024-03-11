@@ -9,11 +9,11 @@ void (*ptr_api_debug)(M, D) = [](const auto message, const auto debug) -> void {
 };
 
 template <class Err>
-concept ErrReasonable = requires(Err& e) {
+concept ErrApiReasonable = requires(Err& e) {
     e.what();
 };
 template <class Err>
-requires ErrReasonable<Err>
+requires ErrApiReasonable<Err>
 void (*ptr_api_error)(Err) = [](const auto e) -> void {
     std::cerr << "ERROR: " << e.what() << std::endl;
 };

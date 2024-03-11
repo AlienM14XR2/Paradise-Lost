@@ -7,6 +7,8 @@
 #include <iostream>
 #include <cassert>
 #include <chrono>
+#include <memory>
+#include <optional>
 #include <nlohmann/json.hpp>
 #include "rest_api_debug.hpp"
 // ORM
@@ -14,6 +16,14 @@
 #include "ConnectionPool.hpp"
 #include "DataField.hpp"
 #include "PersonData.hpp"
+#include "MySQLConnection.hpp"
+#include "Repository.hpp"
+#include "PersonRepository.hpp"
+#include "RdbDataStrategy.hpp"
+#include "PersonStrategy.hpp"
+#include "RdbProcStrategy.hpp"
+#include "MySQLCreateStrategy.hpp"
+#include "MySQLTx.hpp"
 
 int test_debug_and_error() {
     puts("=== test_debug_and_error");
@@ -155,20 +165,72 @@ class CreatePersonCtl final : public Controller<json> {
 public:
     static Controller<json>* factory(const std::string& uri, const char* _json) {
         if(uri == "/api/create/person/" || uri == "/hello_world/create/person") {
-            return new CreatePersonCtl(json::parse(_json));
+            return new CreatePersonCtl(cheshire::app_cp.pop(), json::parse(_json));
         }
         return nullptr;
     }
-    CreatePersonCtl(const json& _j): j(_j) 
+    CreatePersonCtl(sql::Connection* _con, const json& _j): rawCon(_con), j(_j) 
     {}
+    ~CreatePersonCtl() 
+    {
+        if(rawCon) {
+            ptr_api_debug<const char*, const sql::Connection*>("rawCon addr is ", rawCon);
+            cheshire::app_cp.push(rawCon);
+        }
+    }
     virtual json execute() const override {
         puts("------ CreatePersonCtl::execute()");
-        // TODO 実装
-        std::cout << j << std::endl;
-        return json();
+        try {
+            // 実装
+            json result;
+            std::cout << j << std::endl;
+
+            std::unique_ptr<MySQLConnection>                    mcon = std::make_unique<MySQLConnection>(rawCon);
+            std::unique_ptr<Repository<PersonData,std::size_t>> repo = std::make_unique<PersonRepository>(PersonRepository(mcon.get()));                
+            std::unique_ptr<RdbDataStrategy<PersonData>>        strategy = std::make_unique<PersonStrategy>();
+            for(auto v: j) {
+                std::string name_  = v.at("name");
+                std::string email_ = v.at("email");
+                DataField<std::string> name("name", name_);
+                DataField<std::string> email("email", email_);
+                std::optional<DataField<int>> age = std::nullopt;
+                auto age_ = v.at("age");
+                if(!age_.is_null()) {
+                    age = DataField<int>("age", age_);
+                }
+                PersonData person(strategy.get(), name, email, age);
+                std::unique_ptr<RdbProcStrategy<PersonData>> proc_strategy = std::make_unique<MySQLCreateStrategy<PersonData,std::size_t>>(repo.get(), person);
+                MySQLTx tx(mcon.get(), proc_strategy.get());
+                std::optional<PersonData> after = tx.executeTx();
+                if(after.has_value()) {
+                    if(after.value().getAge().has_value()) {        // この仕組みは良くない、複数 option があった場合対応できない。
+                        result["personData"] = {
+                            {"id", after.value().getId().getValue()}
+                            ,{"name", after.value().getName().getValue()}
+                            ,{"email", after.value().getEmail().getValue()}
+                            ,{"age", after.value().getAge().value().getValue()}
+                            };
+                    } else {
+                        result["personData"] = {
+                            {"id", after.value().getId().getValue()}
+                            ,{"name", after.value().getName().getValue()}
+                            ,{"email", after.value().getEmail().getValue()}
+                            };
+                    }
+                }
+            }
+            // 返却と初期化
+            cheshire::app_cp.push(rawCon);
+            rawCon = nullptr;
+            return result;
+        } catch(std::exception& e) {
+            ptr_api_error<const decltype(e)&>(e);
+            return json();
+        }
     }
 private:
-    json j;
+    mutable sql::Connection* rawCon = nullptr;
+    mutable json j;
 };
 
 int test_CreatePersonCtl() {
@@ -180,13 +242,22 @@ int test_CreatePersonCtl() {
      * 必要があると思っている。
     */
     try {
+        // sql::Connection* rawCon = nullptr;
         const char* cj = R"({"personData":{"age":24,"email":"jojo@loki.org","name":"Jojo"}})";
         Controller<json>* ctl = CreatePersonCtl::factory("/api/foo/bar/", cj);
         if(ctl) {            
         } else {
             puts("First ... mistake, no match URI.");
+            // auto start = std::chrono::system_clock::now();
+            std::clock_t start = clock();
             ctl = CreatePersonCtl::factory("/api/create/person/", cj);
-            ctl->execute();
+            json result = ctl->execute();
+            std::cout << result << std::endl;
+            // auto end = std::chrono::system_clock::now();
+            // double elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count(); //処理に要した時間をミリ秒に変換
+            // std::cout << "passed " << elapsed << " msec." << std::endl;
+            std::clock_t end = clock();
+            std::cout << "passed " << (double)(end-start)/CLOCKS_PER_SEC << " sec." << std::endl;
         }
         delete ctl;
         return EXIT_SUCCESS;
