@@ -65,10 +65,11 @@ int main(void) {
         int count = 0;      // これが答えだったか、何らかのオブジェクトを Pool するならここで行い
         while(FCGI_Accept() >= 0)
         {
-            printf("content-type:text/html\r\n");
-            printf("\r\n");
-            printf("<title>Fast CGI Hello</title>");
-            printf("<h1>fast CGI hello</h1>");
+            // printf("content-type:text/html\r\n");
+            printf("Content-Type: application/json\n");
+            // printf("\r\n");
+            // printf("<title>Fast CGI Hello</title>");
+            // printf("<h1>fast CGI hello</h1>");
 
             char* contentLength = nullptr;
             contentLength = getenv("CONTENT_LENGTH");
