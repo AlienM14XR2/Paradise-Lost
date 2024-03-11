@@ -6,8 +6,11 @@
 */
 #include <iostream>
 #include <cassert>
+#include <chrono>
 #include <nlohmann/json.hpp>
 #include "rest_api_debug.hpp"
+#include "DataField.hpp"
+#include "PersonData.hpp"
 
 int test_debug_and_error() {
     puts("=== test_debug_and_error");
@@ -74,6 +77,32 @@ void json_parse_sample() {
     }
 }
 
+PersonData personDataSample() {
+    DataField<std::string> name("name", "Jojo");
+    DataField<std::string> email("email", "jojo@loki.org");
+    DataField<int> age("age", 24);
+    PersonData jojo(nullptr,name,email,age);
+    return jojo;
+}
+
+int test_mock_personData() {
+    puts("=== test_mock_personData");
+    try {
+        auto start = std::chrono::system_clock::now();
+        
+        json_parse_sample();
+        PersonData data = personDataSample();
+        // TODO personData to JSON
+        auto end = std::chrono::system_clock::now();
+        double elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count(); //処理に要した時間をミリ秒に変換
+        std::cout << "passed " << elapsed << " msec." << std::endl;
+         return EXIT_SUCCESS;
+    } catch(std::exception& e) {
+        ptr_api_error<const decltype(e)&>(e);
+        return EXIT_FAILURE;
+    }
+}
+
 /**
  * 設計・実装はここから
 */
@@ -136,6 +165,8 @@ int main(void) {
         json_sample_2();
         ptr_api_debug<const char*, const char*>("Play and Result ... ", personDataJsonSample());
         json_parse_sample();
+        ptr_api_debug<const char*, const decltype(ret)&>("Play and Result ... ", ret = test_mock_personData());
+        assert(ret == 0);
     }
     if(1.00) {
         auto ret = 0;
