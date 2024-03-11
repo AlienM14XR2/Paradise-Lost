@@ -26,6 +26,35 @@ int test_debug_and_error() {
     }
 }
 
+void json_sample_1() {
+    puts("=== json_sample_1");
+    nlohmann::json j;
+    j["pi"] = 3.141;
+    j["happy"] = true;
+    j["name"] = "Niels";
+    j["nothing"] = nullptr;
+    j["answer"]["everything"] = 42;  // 存在しないキーを指定するとobjectが構築される
+    j["list"] = { 1, 0, 2 };         // [1,0,2]
+    j["object"] = { {"currency", "USD"}, {"value", 42.99} };  // {"currentcy": "USD", "value": 42.99}
+    std::cout << j << std::endl;  // coutに渡せば出力できる。
+}
+
+void json_sample_2() {
+    puts("=== json_sample_2");
+    nlohmann::json j;
+    j["personData"] = {{"name", "Jojo"}, {"email", "jojo@loki.org"}, {"age", 24}};
+    std::cout << j << std::endl;
+}
+
+const char* personDataJsonSample() {
+    return R"({
+            "personData": {
+                "name": "Jojo",
+                "email": "jojo@loki.org",
+                "age": 24
+            }})";
+}
+
 /**
  * 設計・実装はここから
 */
@@ -84,6 +113,9 @@ int main(void) {
         auto ret = 0;
         ptr_api_debug<const char*, const decltype(ret)&>("Play and Result ... ", ret = test_debug_and_error());
         assert(ret == 1);
+        json_sample_1();
+        json_sample_2();
+        ptr_api_debug<const char*, const char*>("Play and Result ... ", personDataJsonSample());
     }
     if(1.00) {
         auto ret = 0;
