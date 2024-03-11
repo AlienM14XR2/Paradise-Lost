@@ -25,7 +25,8 @@
 #include "MySQLTx.hpp"
 // REST
 #include "rest_api_debug.hpp"
-#include "Controller.hpp"
+#include "CreatePersonCtl.hpp"
+#include "cheshire_connection_pool.hpp"
 
 int test_debug_and_error() {
     puts("=== test_debug_and_error");
@@ -130,52 +131,21 @@ int test_mock_personData() {
  * 設計・実装はここから
 */
 
-namespace cheshire {
-
-ConnectionPool<sql::Connection> app_cp;
-
-void mysql_connection_pool(const std::string& server, const std::string& user, const std::string& password, const int& sum) 
-{
-    sql::Driver* driver = get_driver_instance();//MySQLDriver::getInstance().getDriver();
-    for(int i=0; i<sum; i++) {
-        sql::Connection* con = driver->connect(server, user, password);
-        if(con->isValid()) {
-            ptr_api_debug<const char*, const int&>("connected ... ", 0);
-            con->setSchema("cheshire");
-            // auto commit は true としておく、Tx が必要な場合はリポジトリで明確にすること。あるいは MySQLTx を利用すること。
-            app_cp.push(con);
-        } else {
-            ptr_api_debug<const char*, const int&>("connection is invalid ... ", 1);
-        }
-    }
-}
-
-}   // end namespace cheshire
-
+extern ConnectionPool<sql::Connection> cheshire::app_cp;
 
 
 using json = nlohmann::json;
 
 
-class CreatePersonCtl final : public Controller<json> {
-public:
-    static Controller<json>* factory(const std::string& uri, const char* _json);
-    CreatePersonCtl(sql::Connection* _con, const json& _j);
-    ~CreatePersonCtl();
-    virtual json execute() const override;
-private:
-    mutable sql::Connection* rawCon = nullptr;
-    mutable json j;
-};
 
-Controller<json>* CreatePersonCtl::factory(const std::string& uri, const char* _json)
+Controller<nlohmann::json>* CreatePersonCtl::factory(const std::string& uri, const char* _json)
 {
     if(uri == "/api/create/person/" || uri == "/hello_world/create/person") {
-        return new CreatePersonCtl(cheshire::app_cp.pop(), json::parse(_json));
+        return new CreatePersonCtl(cheshire::app_cp.pop(), nlohmann::json::parse(_json));
     }
     return nullptr;
 }
-CreatePersonCtl::CreatePersonCtl(sql::Connection* _con, const json& _j): rawCon(_con), j(_j) 
+CreatePersonCtl::CreatePersonCtl(sql::Connection* _con, const nlohmann::json& _j): rawCon(_con), j(_j) 
 {}
 CreatePersonCtl::~CreatePersonCtl() 
 {
@@ -185,12 +155,12 @@ CreatePersonCtl::~CreatePersonCtl()
     }
 }
 // ...
-json CreatePersonCtl::execute() const 
+nlohmann::json CreatePersonCtl::execute() const 
 {
     puts("------ CreatePersonCtl::execute()");
     try {
         // 実装
-        json result;
+        nlohmann::json result;
         std::cout << j << std::endl;
 
         std::unique_ptr<MySQLConnection>                    mcon = std::make_unique<MySQLConnection>(rawCon);
