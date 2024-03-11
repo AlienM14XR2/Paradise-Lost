@@ -78,10 +78,11 @@ void json_parse_sample() {
 }
 
 PersonData personDataSample() {
+    DataField<std::size_t> id("id", 900ul);
     DataField<std::string> name("name", "Jojo");
     DataField<std::string> email("email", "jojo@loki.org");
     DataField<int> age("age", 24);
-    PersonData jojo(nullptr,name,email,age);
+    PersonData jojo(nullptr,id,name,email,age);
     return jojo;
 }
 
@@ -89,10 +90,17 @@ int test_mock_personData() {
     puts("=== test_mock_personData");
     try {
         auto start = std::chrono::system_clock::now();
-        
         json_parse_sample();
         PersonData data = personDataSample();
-        // TODO personData to JSON
+        // personData to JSON
+        nlohmann::json j;
+        j["personData"] = {
+            {"id", data.getId().getValue()}
+            ,{"name", data.getName().getValue()}
+            ,{"email", data.getEmail().getValue()}
+            ,{"age", data.getAge().value().getValue()}
+        };
+        std::cout << j << std::endl;
         auto end = std::chrono::system_clock::now();
         double elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count(); //処理に要した時間をミリ秒に変換
         std::cout << "passed " << elapsed << " msec." << std::endl;
