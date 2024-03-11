@@ -2,8 +2,8 @@
  * サーバを介さないテストを行う。
  * 
  * e.g. compile.
- * 
- * g++ -O3 -DDEBUG -std=c++20 -pedantic-errors -Wall -Werror -I../inc/ -I/home/jack/dev/c++/HandsOn/ORM-Cheshire/inc/ -I/usr/include/mysql-cppconn-8/ -L/usr/lib/x86_64-linux-gnu/ test.cpp -lmysqlcppconn -lmysqlcppconn8 ~/cheshire-bin/PersonRepository.o ~/cheshire-bin/sql_generator.o ~/cheshire-bin/PersonStrategy.o ~/cheshire-bin/PersonData.o ~/cheshire-bin/MySQLConnection.o -o ../bin/test
+ * g++ -O3 -DNDEBUG -std=c++20 -pedantic-errors -Wall -Werror -I../inc/ -I/home/jack/dev/c++/HandsOn/ORM-Cheshire/inc/ -I/usr/include/mysql-cppconn-8/ -c ./controller/CreatePersonCtl.cpp -o ../bin/CreatePersonCtl.o
+ * g++ -O3 -DDEBUG -std=c++20 -pedantic-errors -Wall -Werror -I../inc/ -I/home/jack/dev/c++/HandsOn/ORM-Cheshire/inc/ -I/usr/include/mysql-cppconn-8/ -L/usr/lib/x86_64-linux-gnu/ test.cpp -lmysqlcppconn -lmysqlcppconn8 ~/cheshire-bin/PersonRepository.o ~/cheshire-bin/sql_generator.o ~/cheshire-bin/PersonStrategy.o ~/cheshire-bin/PersonData.o ~/cheshire-bin/MySQLConnection.o ../bin/CreatePersonCtl.o -o ../bin/test
 */
 #include <iostream>
 #include <cassert>
@@ -132,14 +132,14 @@ int test_mock_personData() {
  * 設計・実装はここから
 */
 
-namespace cheshire {
+// namespace cheshire {
 
 ConnectionPool<sql::Connection> app_cp;
 
 void mysql_connection_pool(const std::string& server, const std::string& user, const std::string& password, const int& sum);
 
-}   // end namespace cheshire
-void cheshire::mysql_connection_pool(const std::string& server, const std::string& user, const std::string& password, const int& sum) 
+// }   // end namespace cheshire
+void mysql_connection_pool(const std::string& server, const std::string& user, const std::string& password, const int& sum) 
 {
     sql::Driver* driver = get_driver_instance();//MySQLDriver::getInstance().getDriver();
     for(int i=0; i<sum; i++) {
@@ -155,74 +155,6 @@ void cheshire::mysql_connection_pool(const std::string& server, const std::strin
     }
 }
 
-Controller<nlohmann::json>* CreatePersonCtl::factory(const std::string& uri, const char* _json)
-{
-    if(uri == "/api/create/person/" || uri == "/hello_world/create/person") {
-        return new CreatePersonCtl(cheshire::app_cp.pop(), nlohmann::json::parse(_json));
-    }
-    return nullptr;
-}
-CreatePersonCtl::CreatePersonCtl(sql::Connection* _con, const nlohmann::json& _j): rawCon(_con), j(_j) 
-{}
-CreatePersonCtl::~CreatePersonCtl() 
-{
-    if(rawCon) {
-        ptr_api_debug<const char*, const sql::Connection*>("rawCon addr is ", rawCon);
-        cheshire::app_cp.push(rawCon);
-    }
-}
-// ...
-nlohmann::json CreatePersonCtl::execute() const 
-{
-    puts("------ CreatePersonCtl::execute()");
-    try {
-        // 実装
-        nlohmann::json result;
-        std::cout << j << std::endl;
-
-        std::unique_ptr<MySQLConnection>                    mcon = std::make_unique<MySQLConnection>(rawCon);
-        std::unique_ptr<Repository<PersonData,std::size_t>> repo = std::make_unique<PersonRepository>(PersonRepository(mcon.get()));                
-        std::unique_ptr<RdbDataStrategy<PersonData>>        strategy = std::make_unique<PersonStrategy>();
-        for(auto v: j) {
-            std::string name_  = v.at("name");
-            std::string email_ = v.at("email");
-            DataField<std::string> name("name", name_);
-            DataField<std::string> email("email", email_);
-            std::optional<DataField<int>> age = std::nullopt;
-            auto age_ = v.at("age");
-            if(!age_.is_null()) {
-                age = DataField<int>("age", age_);
-            }
-            PersonData person(strategy.get(), name, email, age);
-            std::unique_ptr<RdbProcStrategy<PersonData>> proc_strategy = std::make_unique<MySQLCreateStrategy<PersonData,std::size_t>>(repo.get(), person);
-            MySQLTx tx(mcon.get(), proc_strategy.get());
-            std::optional<PersonData> after = tx.executeTx();
-            if(after.has_value()) {
-                    if(after.value().getAge().has_value()) {        // この仕組みは良くない、複数 option があった場合対応できない。
-                        result["personData"] = {
-                            {"id", after.value().getId().getValue()}
-                            ,{"name", after.value().getName().getValue()}
-                            ,{"email", after.value().getEmail().getValue()}
-                            ,{"age", after.value().getAge().value().getValue()}
-                        };
-                    } else {
-                        result["personData"] = {
-                            {"id", after.value().getId().getValue()}
-                            ,{"name", after.value().getName().getValue()}
-                            ,{"email", after.value().getEmail().getValue()}
-                        };
-                }
-            }
-        }
-        // 返却と初期化
-        cheshire::app_cp.push(rawCon);
-        rawCon = nullptr;
-        return result;
-    } catch(std::exception& e) {
-        ptr_api_error<const decltype(e)&>(e);
-        return nlohmann::json();
-    }
-}
 
 using json = nlohmann::json;
 
@@ -262,7 +194,7 @@ int test_CreatePersonCtl() {
 
 int main(void) {
     puts("=== START Test");
-    cheshire::mysql_connection_pool("tcp://127.0.0.1:3306", "derek", "derek1234", 3);
+    mysql_connection_pool("tcp://127.0.0.1:3306", "derek", "derek1234", 3);
     if(0.01) {
         auto ret = 0;
         ptr_api_debug<const char*, const decltype(ret)&>("Play and Result ... ", ret = test_debug_and_error());
