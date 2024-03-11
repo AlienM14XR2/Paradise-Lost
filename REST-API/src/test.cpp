@@ -27,7 +27,6 @@
 // REST
 #include "rest_api_debug.hpp"
 #include "CreatePersonCtl.hpp"
-#include "cheshire_connection_pool.hpp"
 
 int test_debug_and_error() {
     puts("=== test_debug_and_error");

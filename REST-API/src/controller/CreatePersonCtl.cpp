@@ -1,6 +1,5 @@
 #include "../../inc/CreatePersonCtl.hpp"
 #include <memory>
-// #include "cheshire_connection_pool.hpp"
 // ORM
 #include "mysql/jdbc.h"
 #include "rest_api_debug.hpp"
