@@ -55,6 +55,25 @@ const char* personDataJsonSample() {
             }})";
 }
 
+void json_parse_sample() {
+    puts("=== json_parse_sample");
+    const char* personData = personDataJsonSample();
+    std::string str = personData;
+    nlohmann::json j = nlohmann::json::parse(str);
+
+    for(auto v: j) {
+        ptr_api_debug<const char*, const decltype(v)&>("v is ", v);
+        std::string name  = v.at("name");   // この name と 次の email の違い、とても重要でとても賢いと思った。     
+        auto email = v.at("email");
+        auto age   = v.at("age");
+        ptr_api_debug<const char*, const decltype(name)&>("name is ", name);
+        ptr_api_debug<const char*, const char*>("name type is ", typeid(name).name());
+        ptr_api_debug<const char*, const decltype(email)&>("email is ", email);
+        ptr_api_debug<const char*, const char*>("email type is ", typeid(email).name());
+        ptr_api_debug<const char*, const decltype(age)&>("age is ", age);
+    }
+}
+
 /**
  * 設計・実装はここから
 */
@@ -116,6 +135,7 @@ int main(void) {
         json_sample_1();
         json_sample_2();
         ptr_api_debug<const char*, const char*>("Play and Result ... ", personDataJsonSample());
+        json_parse_sample();
     }
     if(1.00) {
         auto ret = 0;
