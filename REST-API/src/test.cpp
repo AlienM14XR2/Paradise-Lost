@@ -126,17 +126,22 @@ public:
 
 class CreatePersonCtl final : public Controller<json> {
 public:
-    static Controller<json>* factory(const std::string& uri) {
+    static Controller<json>* factory(const std::string& uri, const char* _json) {
         if(uri == "/api/create/person/" || uri == "/hello_world/create/person") {
-            return new CreatePersonCtl();
+            return new CreatePersonCtl(json::parse(_json));
         }
         return nullptr;
     }
+    CreatePersonCtl(const json& _j): j(_j) 
+    {}
     virtual json execute() const override {
         puts("------ CreatePersonCtl::execute()");
         // TODO 実装
+        std::cout << j << std::endl;
         return json();
-    } 
+    }
+private:
+    json j;
 };
 
 int test_CreatePersonCtl() {
@@ -148,11 +153,12 @@ int test_CreatePersonCtl() {
      * 必要があると思っている。
     */
     try {
-        Controller<json>* ctl = CreatePersonCtl::factory("/api/foo/bar/");
+        const char* cj = R"({"personData":{"age":24,"email":"jojo@loki.org","name":"Jojo"}})";
+        Controller<json>* ctl = CreatePersonCtl::factory("/api/foo/bar/", cj);
         if(ctl) {            
         } else {
             puts("First ... mistake, no match URI.");
-            ctl = CreatePersonCtl::factory("/api/create/person/");
+            ctl = CreatePersonCtl::factory("/api/create/person/", cj);
             ctl->execute();
         }
         delete ctl;
