@@ -9,6 +9,9 @@
 #include <chrono>
 #include <nlohmann/json.hpp>
 #include "rest_api_debug.hpp"
+// ORM
+#include "mysql/jdbc.h"
+#include "ConnectionPool.hpp"
 #include "DataField.hpp"
 #include "PersonData.hpp"
 
@@ -115,6 +118,30 @@ int test_mock_personData() {
  * 設計・実装はここから
 */
 
+namespace cheshire {
+
+ConnectionPool<sql::Connection> app_cp;
+
+void mysql_connection_pool(const std::string& server, const std::string& user, const std::string& password, const int& sum) 
+{
+    sql::Driver* driver = get_driver_instance();//MySQLDriver::getInstance().getDriver();
+    for(int i=0; i<sum; i++) {
+        sql::Connection* con = driver->connect(server, user, password);
+        if(con->isValid()) {
+            ptr_api_debug<const char*, const int&>("connected ... ", 0);
+            con->setSchema("cheshire");
+            // auto commit は true としておく、Tx が必要な場合はリポジトリで明確にすること。あるいは MySQLTx を利用すること。
+            app_cp.push(con);
+        } else {
+            ptr_api_debug<const char*, const int&>("connection is invalid ... ", 1);
+        }
+    }
+}
+
+}   // end namespace cheshire
+
+
+
 using json = nlohmann::json;
 
 template <class T>
@@ -171,6 +198,7 @@ int test_CreatePersonCtl() {
 
 int main(void) {
     puts("=== START Test");
+    cheshire::mysql_connection_pool("tcp://127.0.0.1:3306", "derek", "derek1234", 3);
     if(0.01) {
         auto ret = 0;
         ptr_api_debug<const char*, const decltype(ret)&>("Play and Result ... ", ret = test_debug_and_error());
