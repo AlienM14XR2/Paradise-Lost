@@ -16,7 +16,6 @@
 #include "MySQLTx.hpp"
 
 
-// extern ConnectionPool<sql::Connection> cheshire::app_cp;    // @see cheshire_connection_pool.hpp
 
 extern ConnectionPool<sql::Connection> app_cp;
 
