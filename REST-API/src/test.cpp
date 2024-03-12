@@ -272,6 +272,15 @@ int test_DeletePersonCtl(std::size_t* pid) {
     }
 }
 
+int test_ReadPersonCtl(std::size_t* pid) {
+    puts("=== test_ReadPersonCtl");
+    try {
+        return EXIT_SUCCESS;
+    } catch(std::exception& e) {
+        ptr_api_error<const decltype(e)&>(e);
+        return EXIT_FAILURE;
+    }
+}
 
 int main(void) {
     puts("=== START Test");
@@ -294,6 +303,7 @@ int main(void) {
         ptr_api_debug<const char*, const decltype(ret)&>("Play and Result ... ", ret = test_CreatePersonCtl(pid));
         ptr_api_debug<const char*, const std::size_t&>("pid is ", *pid);
         assert(*pid != 0);
+        ptr_api_debug<const char*, const decltype(ret)&>("Play and Result ... ", ret = test_ReadPersonCtl(pid));
         ptr_api_debug<const char*, const decltype(ret)&>("Play and Result ... ", ret = test_DeletePersonCtl(pid));
         assert(*pid != 0);
     }
