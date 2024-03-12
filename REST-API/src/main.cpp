@@ -124,6 +124,9 @@ int main(void) {
                     delete ctl; ctl = nullptr;
                 }
             } catch(std::exception& e) {
+                result["error"] = {
+                    {"message", e.what()}
+                };                
                 ptr_api_error<const decltype(e)&>(e);
                 if(buf) {
                     free(buf);
