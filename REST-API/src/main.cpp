@@ -6,13 +6,16 @@
  * e.g. compile.
  * ln -s ~/dev/c++/HandsOn/ORM-Cheshire/bin/ cheshire-bin
  * g++ -O3 -DNDEBUG -std=c++20 -pedantic-errors -Wall -Werror -I../inc/ -I/home/jack/dev/c++/HandsOn/ORM-Cheshire/inc/ -I/usr/include/mysql-cppconn-8/ -c ./controller/CreatePersonCtl.cpp -o ../bin/CreatePersonCtl.o
- * g++ -O3 -DDEBUG -std=c++20 -I../inc/ -I/home/jack/dev/c++/HandsOn/ORM-Cheshire/inc/ -I/usr/include/mysql-cppconn-8/ -L/usr/lib/x86_64-linux-gnu/ -pedantic-errors -Wall -Werror main.cpp -lmysqlcppconn -lmysqlcppconn8 -lfcgi++ -lfcgi ~/cheshire-bin/PersonRepository.o ~/cheshire-bin/sql_generator.o ~/cheshire-bin/PersonStrategy.o ~/cheshire-bin/PersonData.o ~/cheshire-bin/MySQLConnection.o ../bin/CreatePersonCtl.o -o ../bin/endpoint
+ * g++ -O3 -DNDEBUG -std=c++20 -pedantic-errors -Wall -Werror -I../inc/ -I/home/jack/dev/c++/HandsOn/ORM-Cheshire/inc/ -I/usr/include/mysql-cppconn-8/ -c ./controller/DeletePersonCtl.cpp -o ../bin/DeletePersonCtl.o
+ * g++ -O3 -DDEBUG -std=c++20 -I../inc/ -I/home/jack/dev/c++/HandsOn/ORM-Cheshire/inc/ -I/usr/include/mysql-cppconn-8/ -L/usr/lib/x86_64-linux-gnu/ -pedantic-errors -Wall -Werror main.cpp -lmysqlcppconn -lmysqlcppconn8 -lfcgi++ -lfcgi ~/cheshire-bin/PersonRepository.o ~/cheshire-bin/sql_generator.o ~/cheshire-bin/PersonStrategy.o ~/cheshire-bin/PersonData.o ~/cheshire-bin/MySQLConnection.o ../bin/CreatePersonCtl.o ../bin/DeletePersonCtl.o -o ../bin/endpoint
  * 
  * e.g. プロセス起動
  * spawn-fcgi -p 9900 -n endpoint
  * 
  * e.g. curl でアクセス
+ * curl -s -X POST -H "Content-Type: application/json; charset=UTF-8" -d '{"personData":{"id": 60}}' http://localhost/api/delete/person/
  * curl -s -X POST -H "Content-Type: application/json; charset=UTF-8" -d '{"personData":{"age":36,"email":"dodo@loki.org","name":"Dodo"}}' http://localhost/api/create/person/
+ * 
 */
 #include <iostream>
 #include <nlohmann/json.hpp>
@@ -30,13 +33,13 @@
 #include "rest_api_debug.hpp"
 #include "Controller.hpp"
 #include "CreatePersonCtl.hpp"
+#include "DeletePersonCtl.hpp"
 // ORM
 #include "mysql/jdbc.h"
 #include "ConnectionPool.hpp"
 
 using json = nlohmann::json;
 
-// namespace cheshire {
 
 ConnectionPool<sql::Connection> app_cp;
 
@@ -57,7 +60,6 @@ void mysql_connection_pool(const std::string& server, const std::string& user, c
         }
     }
 }
-// }   // end namespace cheshire
 
 /**
  * TODO
@@ -71,6 +73,7 @@ void mysql_connection_pool(const std::string& server, const std::string& user, c
  * のようなメンバ関数があったほうが便利だと思う。
 */
 
+
 const std::string rawJson{R"({
             "personData": {
                 "id": 33,
@@ -78,6 +81,19 @@ const std::string rawJson{R"({
                 "email": "jojo@loki.org",
                 "age": 24
             }})"};
+
+
+void action(Controller<json>* ctl, json* pret) {
+    try {
+        if(ctl) {
+            *pret = ctl->execute();
+            std::cout << *pret << std::endl;
+        }
+    } catch(std::exception& e) {
+        throw std::runtime_error(e.what());
+    }
+}
+
 
 int main(void) {
     std::cout << "START REST API" << std::endl;
@@ -92,6 +108,9 @@ int main(void) {
             // printf("<title>Fast CGI Hello</title>");
             // printf("<h1>fast CGI hello</h1>");
 
+            /**
+             * JSON データ取得
+            */
             char* contentLength = nullptr;
             char* buf = nullptr;
             contentLength = getenv("CONTENT_LENGTH");
@@ -110,13 +129,14 @@ int main(void) {
             }
 
             json result;
+            json* pret = &result;
             Controller<json>* ctl = nullptr;
             try {
-                ctl = CreatePersonCtl::factory("/api/create/person/", buf);
-                if(ctl) {
-                    result = ctl->execute();
-                    std::cout << result << std::endl;
-                }
+                ctl = CreatePersonCtl::factory(getenv("REQUEST_URI"), buf);
+                action(ctl, pret);
+                ctl = DeletePersonCtl::factory(getenv("REQUEST_URI"), buf);
+                action(ctl, pret);
+
                 if(buf) {
                     free(buf);  buf = nullptr;
                 }
@@ -129,10 +149,10 @@ int main(void) {
                 };                
                 ptr_api_error<const decltype(e)&>(e);
                 if(buf) {
-                    free(buf);
+                    free(buf);  buf = nullptr;
                 }
                 if(ctl) {
-                    delete ctl;
+                    delete ctl; ctl = nullptr;
                 }
             }
 
