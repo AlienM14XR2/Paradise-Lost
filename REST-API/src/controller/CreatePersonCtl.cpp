@@ -21,7 +21,7 @@ extern ConnectionPool<sql::Connection> app_cp;
 
 Controller<nlohmann::json>* CreatePersonCtl::factory(const std::string& uri, const char* _json)
 {
-    if(uri == "/api/create/person/" || uri == "/hello_world/create/person") {
+    if(uri == "/api/create/person/" || uri == "/api/create/person") {
         return new CreatePersonCtl(app_cp.pop(), nlohmann::json::parse(_json));
     }
     return nullptr;

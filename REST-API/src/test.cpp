@@ -154,6 +154,41 @@ void mysql_connection_pool(const std::string& server, const std::string& user, c
     }
 }
 
+class DeletePersonCtl final : public Controller<nlohmann::json> {
+public:
+    static Controller<nlohmann::json>* factory(const std::string& uri, const char* _json);
+    DeletePersonCtl(sql::Connection* _con, const nlohmann::json& _j);
+    ~DeletePersonCtl();
+    virtual nlohmann::json execute() const override;
+private:
+    mutable sql::Connection* rawCon = nullptr;
+    mutable nlohmann::json j;
+};
+
+Controller<nlohmann::json>* DeletePersonCtl::factory(const std::string& uri, const char* _json) 
+{
+    if(uri == "/api/delete/person/" || uri == "/api/delete/person") {
+        return new DeletePersonCtl(app_cp.pop(), nlohmann::json::parse(_json));
+    }
+    return nullptr;
+}
+DeletePersonCtl::DeletePersonCtl(sql::Connection* _con, const nlohmann::json& _j): rawCon(_con), j(_j)
+{}
+DeletePersonCtl::~DeletePersonCtl()
+{
+    if(rawCon) {
+        ptr_api_debug<const char*, const sql::Connection*>("rawCon addr is ", rawCon);
+        app_cp.push(rawCon);
+    }
+}
+nlohmann::json DeletePersonCtl::execute() const 
+{
+    puts("------ DeletePersonCtl::execute()");
+    // TODO 実装
+    return nlohmann::json();
+}
+
+
 
 using json = nlohmann::json;
 
