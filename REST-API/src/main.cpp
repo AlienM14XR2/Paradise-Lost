@@ -33,7 +33,7 @@
 
 using json = nlohmann::json;
 
-namespace cheshire {
+// namespace cheshire {
 
 ConnectionPool<sql::Connection> app_cp;
 
@@ -54,8 +54,19 @@ void mysql_connection_pool(const std::string& server, const std::string& user, c
         }
     }
 }
+// }   // end namespace cheshire
 
-}   // end namespace cheshire
+/**
+ * TODO
+ * 
+ * ORM でも自分の興味があることしかやっていない。
+ * Validation は本当はとても重要な機能だが、全く実装していない。
+ * 設計は行っておくべきと考える。
+ * 
+ * REST API において JSON でやり取りすることは、珍しくない。
+ * RDBMS と REST 双方で利用される Data は std::string toJson() 
+ * のようなメンバ関数があったほうが便利だと思う。
+*/
 
 const std::string rawJson{R"({
             "personData": {
@@ -68,7 +79,7 @@ const std::string rawJson{R"({
 int main(void) {
     std::cout << "START REST API" << std::endl;
     try {
-        cheshire::mysql_connection_pool("tcp://127.0.0.1:3306", "derek", "derek1234", 10);
+        mysql_connection_pool("tcp://127.0.0.1:3306", "derek", "derek1234", 10);
         int count = 0;      // これが答えだったか、何らかのオブジェクトを Pool するならここで行い
         json j = json::parse(rawJson);
         while(FCGI_Accept() >= 0)
