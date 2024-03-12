@@ -87,6 +87,8 @@ void action(Controller<json>* ctl, json* pret) {
     try {
         if(ctl) {
             *pret = ctl->execute();
+            delete ctl;
+            ctl = nullptr;
             std::cout << *pret << std::endl;
         }
     } catch(std::exception& e) {
@@ -100,7 +102,7 @@ int main(void) {
     try {
         mysql_connection_pool("tcp://127.0.0.1:3306", "derek", "derek1234", 10);
         // int count = 0;      // これが答えだったか、何らかのオブジェクトを Pool するならここで行い
-        json j = json::parse(rawJson);
+        // json j = json::parse(rawJson);
         while(FCGI_Accept() >= 0)
         {
             // printf("content-type:text/html\r\n");
@@ -138,21 +140,24 @@ int main(void) {
                 action(ctl, pret);
 
                 if(buf) {
-                    free(buf);  buf = nullptr;
+                    free(buf);
+                    buf = nullptr;
                 }
-                if(ctl) {
-                    delete ctl; ctl = nullptr;
-                }
+                // if(ctl) {
+                //     delete ctl; ctl = nullptr;
+                // }
             } catch(std::exception& e) {
                 result["error"] = {
                     {"message", e.what()}
                 };                
                 ptr_api_error<const decltype(e)&>(e);
                 if(buf) {
-                    free(buf);  buf = nullptr;
+                    free(buf);
+                    buf = nullptr;
                 }
                 if(ctl) {
-                    delete ctl; ctl = nullptr;
+                    delete ctl;
+                    ctl = nullptr;
                 }
             }
 
