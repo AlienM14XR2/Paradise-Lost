@@ -69,7 +69,7 @@ void mysql_connection_pool(const std::string& server, const std::string& user, c
  * 設計は行っておくべきと考える。
  * 
  * REST API において JSON でやり取りすることは、珍しくない。
- * RDBMS と REST 双方で利用される Data は std::string toJson() 
+ * RDBMS と REST 双方で利用される Data には std::string toJson() 
  * のようなメンバ関数があったほうが便利だと思う。
 */
 

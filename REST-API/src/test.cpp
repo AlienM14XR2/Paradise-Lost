@@ -158,6 +158,18 @@ void mysql_connection_pool(const std::string& server, const std::string& user, c
 }
 
 
+/**
+ * TODO ReadPersonCtl の宣言と定義
+*/
+
+
+
+
+/**
+ * TODO UpdatePersonCtl の宣言と定義
+*/
+
+
 
 
 
@@ -170,7 +182,7 @@ int test_CreatePersonCtl(std::size_t* pid) {
      * 今回は std::unique_ptr の使いどころが難しいと考える。
      * まだ、学習中なので確かなことは言えないが、fcgi によって、エンドポイントのプロセスは起動し続ける。
      * つまり、std::unique_ptr の解放時期がおそらく見当たらない。よって、プログラマが正しく解放管理を行う
-     * 必要があると思っている。
+     * 必要があると思っている。補足すると関数化してローカルで利用すれば、無論上記の話は該当しない。
     */
     try {
         const char* cj = R"({"personData":{"age":24,"email":"jojo@loki.org","name":"Jojo"}})";
