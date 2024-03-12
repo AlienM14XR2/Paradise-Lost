@@ -211,7 +211,17 @@ nlohmann::json DeletePersonCtl::execute() const
 
 using json = nlohmann::json;
 
-int test_CreatePersonCtl() {
+int test_DeletePersonCtl() {
+    puts("=== test_DeletePersonCtl");
+    try {
+        return EXIT_SUCCESS;
+    } catch(std::exception& e) {
+        ptr_api_error<const decltype(e)&>(e);
+        return EXIT_FAILURE;
+    }
+}
+
+int test_CreatePersonCtl(std::size_t* pid) {
     puts("=== test_CreatePersonCtl");
     /**
      * 今回は std::unique_ptr の使いどころが難しいと考える。
@@ -236,6 +246,9 @@ int test_CreatePersonCtl() {
             // std::cout << "passed " << elapsed << " msec." << std::endl;
             std::clock_t end = clock();
             std::cout << "passed " << (double)(end-start)/CLOCKS_PER_SEC << " sec." << std::endl;
+            for(auto v: result) {
+                *pid = v.at("id");
+            }
         }
         delete ctl;
         return EXIT_SUCCESS;
@@ -261,8 +274,11 @@ int main(void) {
     }
     if(1.00) {
         auto ret = 0;
-        ptr_api_debug<const char*, const decltype(ret)&>("Play and Result ... ", ret = test_CreatePersonCtl());
-        // assert(ret == 0);
+        std::size_t id = 0;
+        std::size_t* pid = &id;
+        ptr_api_debug<const char*, const decltype(ret)&>("Play and Result ... ", ret = test_CreatePersonCtl(pid));
+        ptr_api_debug<const char*, const std::size_t&>("pid is ", *pid);
+        assert(*pid != 0);
     }
     puts("END   Test === ");    
 }
