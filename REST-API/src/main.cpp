@@ -138,6 +138,15 @@ int main(void) {
             if(!result.empty()) {
                 printf("%s\n",result.dump().c_str());
             }
+            /**
+             * TODO Exception Handling
+             * 
+             * Exception のハンドリングが必要だね。
+             * json に エラーメッセージを入れて返却できればいいと思う。
+             * よくあるのは、エラーコードとエラーメッセージの組み合わせ
+             * だけれど、今回はエラーメッセージだけでよい。
+            */
+
             // std::cout << rawJson << std::endl;
             // printf("request uri is %s\n", getenv("REQUEST_URI"));   // これをもとに各処理に分岐できる、REST API のエンドポイントとして充分使えそう。
             // printf("Request number %d running on host<i>%s</i>\n",++count,getenv("SERVER_NAME"));            
