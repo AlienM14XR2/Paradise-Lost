@@ -85,7 +85,8 @@ nlohmann::json CreatePersonCtl::execute() const
         return result;
     } catch(std::exception& e) {
         ptr_api_error<const decltype(e)&>(e);
-        return nlohmann::json();
+        throw std::runtime_error(e.what());
+        // return nlohmann::json();
     }
 }
 
