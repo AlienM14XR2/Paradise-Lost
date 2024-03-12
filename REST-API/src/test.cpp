@@ -196,10 +196,14 @@ nlohmann::json DeletePersonCtl::execute() const
             std::size_t id = v.at("id");
             std::unique_ptr<RdbProcStrategy<PersonData>>    proc_strategy_d = std::make_unique<MySQLDeleteStrategy<PersonData,std::size_t>>(repo.get(), id);
             MySQLTx tx(mcon.get(), proc_strategy_d.get());
+            tx.executeTx();
             result["personData"] = {
                 {"id", id}
             };
         }        
+        // 返却と初期化
+        app_cp.push(rawCon);
+        rawCon = nullptr;
         return result;
     } catch(std::exception& e) {
         ptr_api_error<const decltype(e)&>(e);
@@ -211,15 +215,6 @@ nlohmann::json DeletePersonCtl::execute() const
 
 using json = nlohmann::json;
 
-int test_DeletePersonCtl() {
-    puts("=== test_DeletePersonCtl");
-    try {
-        return EXIT_SUCCESS;
-    } catch(std::exception& e) {
-        ptr_api_error<const decltype(e)&>(e);
-        return EXIT_FAILURE;
-    }
-}
 
 int test_CreatePersonCtl(std::size_t* pid) {
     puts("=== test_CreatePersonCtl");
@@ -230,7 +225,6 @@ int test_CreatePersonCtl(std::size_t* pid) {
      * 必要があると思っている。
     */
     try {
-        // sql::Connection* rawCon = nullptr;
         const char* cj = R"({"personData":{"age":24,"email":"jojo@loki.org","name":"Jojo"}})";
         Controller<json>* ctl = CreatePersonCtl::factory("/api/foo/bar/", cj);
         if(ctl) {            
@@ -258,6 +252,25 @@ int test_CreatePersonCtl(std::size_t* pid) {
     }
 }
 
+int test_DeletePersonCtl(std::size_t* pid) {
+    puts("=== test_DeletePersonCtl");
+    try {
+        // const char* cj = R"({"personData":{"id":24}})";
+        std::string str(R"({"personData":{"id":)");
+        str.append(" ").append(std::to_string(*pid)).append("}}");
+        std::cout << str << std::endl;
+        Controller<json>* ctl = DeletePersonCtl::factory("/api/delete/person/", str.c_str());
+        json result = ctl->execute();
+        std::cout << result << std::endl;
+        delete ctl;
+        return EXIT_SUCCESS;
+    } catch(std::exception& e) {
+        ptr_api_error<const decltype(e)&>(e);
+        return EXIT_FAILURE;
+    }
+}
+
+
 int main(void) {
     puts("=== START Test");
     mysql_connection_pool("tcp://127.0.0.1:3306", "derek", "derek1234", 3);
@@ -278,6 +291,8 @@ int main(void) {
         std::size_t* pid = &id;
         ptr_api_debug<const char*, const decltype(ret)&>("Play and Result ... ", ret = test_CreatePersonCtl(pid));
         ptr_api_debug<const char*, const std::size_t&>("pid is ", *pid);
+        assert(*pid != 0);
+        ptr_api_debug<const char*, const decltype(ret)&>("Play and Result ... ", ret = test_DeletePersonCtl(pid));
         assert(*pid != 0);
     }
     puts("END   Test === ");    
