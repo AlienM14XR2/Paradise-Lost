@@ -11,7 +11,7 @@
  * spawn-fcgi -p 9900 -n endpoint
  * 
  * e.g. curl でアクセス
- * curl -i -s -X POST -d 'this is the post content.' http://localhost/api/create/person/
+ * curl -s -X POST -H "Content-Type: application/json; charset=UTF-8" -d '{"personData":{"age":24,"email":"jojo@loki.org","name":"Jojo"}}' http://localhost/api/create/person/
 */
 #include <iostream>
 #include <nlohmann/json.hpp>
@@ -73,11 +73,13 @@ int main(void) {
         // json j = json::parse(rawJson);
         while(FCGI_Accept() >= 0)
         {
-            printf("content-type:text/html\r\n");
-            // printf("Content-Type: application/json\n");
-            printf("\r\n");
-            printf("<title>Fast CGI Hello</title>");
-            printf("<h1>fast CGI hello</h1>");
+            // printf("content-type:text/html\r\n");
+            // printf("\r\n");
+            // printf("<title>Fast CGI Hello</title>");
+            // printf("<h1>fast CGI hello</h1>");
+
+            printf("Content-Type: application/json; charset=UTF-8\r\n");    // \r\n これと下のものがないと Bad Gateway になる。
+            printf("\r\n");                                                 // \r\n 続けて書いても問題ないはず。
 
             char* contentLength = nullptr;
             contentLength = getenv("CONTENT_LENGTH");
@@ -96,6 +98,7 @@ int main(void) {
                     free(buf);
                 }
             }
+            printf("%s\n",rawJson.c_str());
             // std::cout << rawJson << std::endl;
             // printf("request uri is %s\n", getenv("REQUEST_URI"));   // これをもとに各処理に分岐できる、REST API のエンドポイントとして充分使えそう。
             printf("Request number %d running on host<i>%s</i>\n",++count,getenv("SERVER_NAME"));            
