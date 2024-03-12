@@ -31,7 +31,7 @@
 #include "mysql/jdbc.h"
 #include "ConnectionPool.hpp"
 
-// using json = nlohmann::json;
+using json = nlohmann::json;
 
 namespace cheshire {
 
@@ -70,7 +70,7 @@ int main(void) {
     try {
         cheshire::mysql_connection_pool("tcp://127.0.0.1:3306", "derek", "derek1234", 10);
         int count = 0;      // これが答えだったか、何らかのオブジェクトを Pool するならここで行い
-        // json j = json::parse(rawJson);
+        json j = json::parse(rawJson);
         while(FCGI_Accept() >= 0)
         {
             // printf("content-type:text/html\r\n");
@@ -98,7 +98,7 @@ int main(void) {
                     free(buf);
                 }
             }
-            printf("%s\n",rawJson.c_str());
+            printf("%s\n",j.dump().c_str());
             // std::cout << rawJson << std::endl;
             // printf("request uri is %s\n", getenv("REQUEST_URI"));   // これをもとに各処理に分岐できる、REST API のエンドポイントとして充分使えそう。
             printf("Request number %d running on host<i>%s</i>\n",++count,getenv("SERVER_NAME"));            
