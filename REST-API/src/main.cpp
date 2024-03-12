@@ -14,11 +14,11 @@
  * curl -i -s -X POST -d 'this is the post content.' http://localhost/api/create/person/
 */
 #include <iostream>
+#include <nlohmann/json.hpp>
 #include <string>
 #include <cassert>
 #include <optional>
 #include <chrono>
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,11 +27,11 @@
 #include <fcgi_stdio.h>
 
 #include "rest_api_debug.hpp"
-
 // ORM
 #include "mysql/jdbc.h"
 #include "ConnectionPool.hpp"
-// #include "MySQLDriver.hpp"   これを利用しようとすると上手くいかない。
+
+// using json = nlohmann::json;
 
 namespace cheshire {
 
@@ -57,19 +57,27 @@ void mysql_connection_pool(const std::string& server, const std::string& user, c
 
 }   // end namespace cheshire
 
+const std::string rawJson{R"({
+            "personData": {
+                "id": 33,
+                "name": "Jojo",
+                "email": "jojo@loki.org",
+                "age": 24
+            }})"};
 
 int main(void) {
     std::cout << "START REST API" << std::endl;
     try {
         cheshire::mysql_connection_pool("tcp://127.0.0.1:3306", "derek", "derek1234", 10);
         int count = 0;      // これが答えだったか、何らかのオブジェクトを Pool するならここで行い
+        // json j = json::parse(rawJson);
         while(FCGI_Accept() >= 0)
         {
-            // printf("content-type:text/html\r\n");
-            printf("Content-Type: application/json\n");
-            // printf("\r\n");
-            // printf("<title>Fast CGI Hello</title>");
-            // printf("<h1>fast CGI hello</h1>");
+            printf("content-type:text/html\r\n");
+            // printf("Content-Type: application/json\n");
+            printf("\r\n");
+            printf("<title>Fast CGI Hello</title>");
+            printf("<h1>fast CGI hello</h1>");
 
             char* contentLength = nullptr;
             contentLength = getenv("CONTENT_LENGTH");
@@ -88,9 +96,9 @@ int main(void) {
                     free(buf);
                 }
             }
-
-            printf("request uri is %s\n", getenv("REQUEST_URI"));   // これをもとに各処理に分岐できる、REST API のエンドポイントとして充分使えそう。
-            printf("Request number %d running on host<i>%s</i>\n",++count,getenv("SERVER_NAME"));
+            // std::cout << rawJson << std::endl;
+            // printf("request uri is %s\n", getenv("REQUEST_URI"));   // これをもとに各処理に分岐できる、REST API のエンドポイントとして充分使えそう。
+            printf("Request number %d running on host<i>%s</i>\n",++count,getenv("SERVER_NAME"));            
         }
         // while を抜けた際に、取得したメモリは解放する
         puts("END   REST API ===");
