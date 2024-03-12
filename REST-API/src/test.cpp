@@ -162,8 +162,50 @@ void mysql_connection_pool(const std::string& server, const std::string& user, c
  * TODO ReadPersonCtl の宣言と定義
 */
 
+class ReadPersonCtl final : public Controller<nlohmann::json> {
+public:
+    static Controller<nlohmann::json>* factory(const std::string& uri, const char* _json);
+    ReadPersonCtl(sql::Connection* _con, const nlohmann::json& _j);
+    ~ReadPersonCtl();
+    virtual nlohmann::json execute() const override;
+private:
+    mutable sql::Connection* rawCon = nullptr;
+    mutable nlohmann::json j;
+};
 
+Controller<nlohmann::json>* ReadPersonCtl::factory(const std::string& uri, const char* _json) 
+{
+    if(uri == "/api/read/person/" || uri == "/api/read/person") {
+        return new ReadPersonCtl(app_cp.pop(), nlohmann::json::parse(_json));
+    }
+    return nullptr;
+}
+ReadPersonCtl::ReadPersonCtl(sql::Connection* _con, const nlohmann::json& _j): rawCon(_con), j(_j)
+{}
+ReadPersonCtl::~ReadPersonCtl()
+{
+    if(rawCon) {
+        ptr_api_debug<const char*, const sql::Connection*>("rawCon addr is ", rawCon);
+        app_cp.push(rawCon);
+    }
+}
+nlohmann::json ReadPersonCtl::execute() const 
+{
+    puts("------ ReadPersonCtl::execute()");
+    try {
+        // TODO 実装
+        nlohmann::json result;
+        std::cout << j << std::endl;
 
+        // 返却と初期化
+        app_cp.push(rawCon);
+        rawCon = nullptr;
+        return result;
+    } catch(std::exception& e) {
+        ptr_api_error<const decltype(e)&>(e);
+        throw std::runtime_error(e.what());
+    }
+}
 
 /**
  * TODO UpdatePersonCtl の宣言と定義
