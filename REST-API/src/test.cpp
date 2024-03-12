@@ -23,6 +23,7 @@
 #include "PersonStrategy.hpp"
 #include "RdbProcStrategy.hpp"
 #include "MySQLCreateStrategy.hpp"
+#include "MySQLDeleteStrategy.hpp"
 #include "MySQLTx.hpp"
 // REST
 #include "rest_api_debug.hpp"
@@ -184,8 +185,26 @@ DeletePersonCtl::~DeletePersonCtl()
 nlohmann::json DeletePersonCtl::execute() const 
 {
     puts("------ DeletePersonCtl::execute()");
-    // TODO 実装
-    return nlohmann::json();
+    try {
+        // 実装
+        nlohmann::json result;
+        std::cout << j << std::endl;
+
+        std::unique_ptr<MySQLConnection>                    mcon            = std::make_unique<MySQLConnection>(rawCon);
+        std::unique_ptr<Repository<PersonData,std::size_t>> repo            = std::make_unique<PersonRepository>(PersonRepository(mcon.get()));
+        for(auto v: j) {
+            std::size_t id = v.at("id");
+            std::unique_ptr<RdbProcStrategy<PersonData>>    proc_strategy_d = std::make_unique<MySQLDeleteStrategy<PersonData,std::size_t>>(repo.get(), id);
+            MySQLTx tx(mcon.get(), proc_strategy_d.get());
+            result["personData"] = {
+                {"id", id}
+            };
+        }        
+        return result;
+    } catch(std::exception& e) {
+        ptr_api_error<const decltype(e)&>(e);
+        throw std::runtime_error(e.what());
+    }
 }
 
 
