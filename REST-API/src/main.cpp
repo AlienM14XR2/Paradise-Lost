@@ -12,7 +12,7 @@
  * spawn-fcgi -p 9900 -n endpoint
  * 
  * e.g. curl でアクセス
- * curl -s -X POST -H "Content-Type: application/json; charset=UTF-8" -d '{"personData":{"age":24,"email":"jojo@loki.org","name":"Jojo"}}' http://localhost/api/create/person/
+ * curl -s -X POST -H "Content-Type: application/json; charset=UTF-8" -d '{"personData":{"age":36,"email":"dodo@loki.org","name":"Dodo"}}' http://localhost/api/create/person/
 */
 #include <iostream>
 #include <nlohmann/json.hpp>
@@ -113,6 +113,10 @@ int main(void) {
             Controller<json>* ctl = nullptr;
             try {
                 ctl = CreatePersonCtl::factory("/api/create/person/", buf);
+                if(ctl) {
+                    result = ctl->execute();
+                    std::cout << result << std::endl;
+                }
                 if(buf) {
                     free(buf);  buf = nullptr;
                 }
@@ -131,8 +135,9 @@ int main(void) {
 
             printf("Content-Type: application/json; charset=UTF-8\r\n");    // \r\n これと下のものがないと Bad Gateway になる。
             printf("\r\n");                                                 // \r\n 続けて書いても問題ないはず。
-
-            printf("%s\n",j.dump().c_str());
+            if(!result.empty()) {
+                printf("%s\n",result.dump().c_str());
+            }
             // std::cout << rawJson << std::endl;
             // printf("request uri is %s\n", getenv("REQUEST_URI"));   // これをもとに各処理に分岐できる、REST API のエンドポイントとして充分使えそう。
             // printf("Request number %d running on host<i>%s</i>\n",++count,getenv("SERVER_NAME"));            
