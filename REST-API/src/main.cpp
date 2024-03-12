@@ -5,7 +5,8 @@
  *  
  * e.g. compile.
  * ln -s ~/dev/c++/HandsOn/ORM-Cheshire/bin/ cheshire-bin
- * g++ -O3 -DDEBUG -std=c++20 -I../inc/ -I/home/jack/dev/c++/HandsOn/ORM-Cheshire/inc/ -I/usr/include/mysql-cppconn-8/ -L/usr/lib/x86_64-linux-gnu/ -pedantic-errors -Wall -Werror main.cpp -lmysqlcppconn -lmysqlcppconn8 -lfcgi++ -lfcgi ~/cheshire-bin/PersonRepository.o ~/cheshire-bin/sql_generator.o ~/cheshire-bin/PersonStrategy.o ~/cheshire-bin/PersonData.o ~/cheshire-bin/MySQLConnection.o -o ../bin/endpoint
+ * g++ -O3 -DNDEBUG -std=c++20 -pedantic-errors -Wall -Werror -I../inc/ -I/home/jack/dev/c++/HandsOn/ORM-Cheshire/inc/ -I/usr/include/mysql-cppconn-8/ -c ./controller/CreatePersonCtl.cpp -o ../bin/CreatePersonCtl.o
+ * g++ -O3 -DDEBUG -std=c++20 -I../inc/ -I/home/jack/dev/c++/HandsOn/ORM-Cheshire/inc/ -I/usr/include/mysql-cppconn-8/ -L/usr/lib/x86_64-linux-gnu/ -pedantic-errors -Wall -Werror main.cpp -lmysqlcppconn -lmysqlcppconn8 -lfcgi++ -lfcgi ~/cheshire-bin/PersonRepository.o ~/cheshire-bin/sql_generator.o ~/cheshire-bin/PersonStrategy.o ~/cheshire-bin/PersonData.o ~/cheshire-bin/MySQLConnection.o ../bin/CreatePersonCtl.o -o ../bin/endpoint
  * 
  * e.g. プロセス起動
  * spawn-fcgi -p 9900 -n endpoint
@@ -25,8 +26,10 @@
 #include <unistd.h>
 #include <fcgi_config.h>
 #include <fcgi_stdio.h>
-
+// REST
 #include "rest_api_debug.hpp"
+#include "Controller.hpp"
+#include "CreatePersonCtl.hpp"
 // ORM
 #include "mysql/jdbc.h"
 #include "ConnectionPool.hpp"
@@ -80,7 +83,7 @@ int main(void) {
     std::cout << "START REST API" << std::endl;
     try {
         mysql_connection_pool("tcp://127.0.0.1:3306", "derek", "derek1234", 10);
-        int count = 0;      // これが答えだったか、何らかのオブジェクトを Pool するならここで行い
+        // int count = 0;      // これが答えだったか、何らかのオブジェクトを Pool するならここで行い
         json j = json::parse(rawJson);
         while(FCGI_Accept() >= 0)
         {
@@ -89,15 +92,12 @@ int main(void) {
             // printf("<title>Fast CGI Hello</title>");
             // printf("<h1>fast CGI hello</h1>");
 
-            printf("Content-Type: application/json; charset=UTF-8\r\n");    // \r\n これと下のものがないと Bad Gateway になる。
-            printf("\r\n");                                                 // \r\n 続けて書いても問題ないはず。
-
             char* contentLength = nullptr;
+            char* buf = nullptr;
             contentLength = getenv("CONTENT_LENGTH");
             if(contentLength) {
                 ptr_api_debug<const char*, const char*>("CONTENT_LENGTH: ", contentLength);
                 auto size = atoll(contentLength);
-                char* buf = nullptr;
                 buf = (char*)malloc(size + 1);
                 if(buf) {
                     for(auto i=0; i < size+1; i++) {
@@ -106,13 +106,36 @@ int main(void) {
                     auto r_size = FCGI_fread(buf, size, 1, FCGI_stdin);
                     ptr_api_debug<const char*, const decltype(r_size)&>("r_size: ", r_size);
                     ptr_api_debug<const char*, const char*>("buf: ", buf);
-                    free(buf);
                 }
             }
+
+            json result;
+            Controller<json>* ctl = nullptr;
+            try {
+                ctl = CreatePersonCtl::factory("/api/create/person/", buf);
+                if(buf) {
+                    free(buf);  buf = nullptr;
+                }
+                if(ctl) {
+                    delete ctl; ctl = nullptr;
+                }
+            } catch(std::exception& e) {
+                ptr_api_error<const decltype(e)&>(e);
+                if(buf) {
+                    free(buf);
+                }
+                if(ctl) {
+                    delete ctl;
+                }
+            }
+
+            printf("Content-Type: application/json; charset=UTF-8\r\n");    // \r\n これと下のものがないと Bad Gateway になる。
+            printf("\r\n");                                                 // \r\n 続けて書いても問題ないはず。
+
             printf("%s\n",j.dump().c_str());
             // std::cout << rawJson << std::endl;
             // printf("request uri is %s\n", getenv("REQUEST_URI"));   // これをもとに各処理に分岐できる、REST API のエンドポイントとして充分使えそう。
-            printf("Request number %d running on host<i>%s</i>\n",++count,getenv("SERVER_NAME"));            
+            // printf("Request number %d running on host<i>%s</i>\n",++count,getenv("SERVER_NAME"));            
         }
         // while を抜けた際に、取得したメモリは解放する
         puts("END   REST API ===");
