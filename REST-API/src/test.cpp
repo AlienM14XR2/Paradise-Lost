@@ -25,6 +25,7 @@
 #include "RdbProcStrategy.hpp"
 #include "MySQLCreateStrategy.hpp"
 #include "MySQLDeleteStrategy.hpp"
+#include "MySQLReadStrategy.hpp"
 #include "MySQLTx.hpp"
 // REST
 #include "rest_api_debug.hpp"
@@ -197,6 +198,30 @@ nlohmann::json ReadPersonCtl::execute() const
         nlohmann::json result;
         std::cout << j << std::endl;
 
+        std::unique_ptr<MySQLConnection>                    mcon = std::make_unique<MySQLConnection>(rawCon);
+        std::unique_ptr<Repository<PersonData,std::size_t>> repo = std::make_unique<PersonRepository>(PersonRepository(mcon.get()));                
+        for(auto v: j) {
+            std::size_t id = v.at("id");
+            std::unique_ptr<RdbProcStrategy<PersonData>> proc_strategy = std::make_unique<MySQLReadStrategy<PersonData,std::size_t>>(repo.get(), id);
+            MySQLTx tx(mcon.get(), proc_strategy.get());
+            std::optional<PersonData> after = tx.executeTx();
+            if(after.has_value()) {
+                if(after.value().getAge().has_value()) {        // この仕組みは良くない、複数 option があった場合対応できない。
+                    result["personData"] = {
+                        {"id", after.value().getId().getValue()}
+                        ,{"name", after.value().getName().getValue()}
+                        ,{"email", after.value().getEmail().getValue()}
+                        ,{"age", after.value().getAge().value().getValue()}
+                    };
+                } else {
+                    result["personData"] = {
+                        {"id", after.value().getId().getValue()}
+                        ,{"name", after.value().getName().getValue()}
+                        ,{"email", after.value().getEmail().getValue()}
+                    };
+                }
+            }
+        }        
         // 返却と初期化
         app_cp.push(rawCon);
         rawCon = nullptr;
@@ -275,6 +300,13 @@ int test_DeletePersonCtl(std::size_t* pid) {
 int test_ReadPersonCtl(std::size_t* pid) {
     puts("=== test_ReadPersonCtl");
     try {
+        std::string str(R"({"personData":{"id":)");
+        str.append(" ").append(std::to_string(*pid)).append("}}");
+        std::cout << str << std::endl;
+        Controller<json>* ctl = ReadPersonCtl::factory("/api/read/person/", str.c_str());
+        json result = ctl->execute();
+        std::cout << result << std::endl;
+        delete ctl;
         return EXIT_SUCCESS;
     } catch(std::exception& e) {
         ptr_api_error<const decltype(e)&>(e);
