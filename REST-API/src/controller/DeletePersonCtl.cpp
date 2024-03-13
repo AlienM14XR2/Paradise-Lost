@@ -52,7 +52,7 @@ nlohmann::json DeletePersonCtl::execute() const
             result["personData"] = {
                 {"id", id}
             };
-        }        
+        }
         // 返却と初期化
         app_cp.push(rawCon);
         rawCon = nullptr;
