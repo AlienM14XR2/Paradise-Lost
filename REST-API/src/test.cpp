@@ -4,7 +4,8 @@
  * e.g. compile.
  * g++ -O3 -DNDEBUG -std=c++20 -pedantic-errors -Wall -Werror -I../inc/ -I/home/jack/dev/c++/HandsOn/ORM-Cheshire/inc/ -I/usr/include/mysql-cppconn-8/ -c ./controller/CreatePersonCtl.cpp -o ../bin/CreatePersonCtl.o
  * g++ -O3 -DNDEBUG -std=c++20 -pedantic-errors -Wall -Werror -I../inc/ -I/home/jack/dev/c++/HandsOn/ORM-Cheshire/inc/ -I/usr/include/mysql-cppconn-8/ -c ./controller/DeletePersonCtl.cpp -o ../bin/DeletePersonCtl.o
- * g++ -O3 -DDEBUG -std=c++20 -pedantic-errors -Wall -Werror -I../inc/ -I/home/jack/dev/c++/HandsOn/ORM-Cheshire/inc/ -I/usr/include/mysql-cppconn-8/ -L/usr/lib/x86_64-linux-gnu/ test.cpp -lmysqlcppconn -lmysqlcppconn8 ~/cheshire-bin/PersonRepository.o ~/cheshire-bin/sql_generator.o ~/cheshire-bin/PersonStrategy.o ~/cheshire-bin/PersonData.o ~/cheshire-bin/MySQLConnection.o ../bin/CreatePersonCtl.o ../bin/DeletePersonCtl.o -o ../bin/test
+ * g++ -O3 -DNDEBUG -std=c++20 -pedantic-errors -Wall -Werror -I../inc/ -I/home/jack/dev/c++/HandsOn/ORM-Cheshire/inc/ -I/usr/include/mysql-cppconn-8/ -c ./controller/ReadPersonCtl.cpp -o ../bin/ReadPersonCtl.o
+ * g++ -O3 -DDEBUG -std=c++20 -pedantic-errors -Wall -Werror -I../inc/ -I/home/jack/dev/c++/HandsOn/ORM-Cheshire/inc/ -I/usr/include/mysql-cppconn-8/ -L/usr/lib/x86_64-linux-gnu/ test.cpp -lmysqlcppconn -lmysqlcppconn8 ~/cheshire-bin/PersonRepository.o ~/cheshire-bin/sql_generator.o ~/cheshire-bin/PersonStrategy.o ~/cheshire-bin/PersonData.o ~/cheshire-bin/MySQLConnection.o ../bin/CreatePersonCtl.o ../bin/DeletePersonCtl.o ../bin/ReadPersonCtl.o -o ../bin/test
 */
 #include <iostream>
 #include <cassert>
@@ -31,6 +32,7 @@
 #include "rest_api_debug.hpp"
 #include "CreatePersonCtl.hpp"
 #include "DeletePersonCtl.hpp"
+#include "ReadPersonCtl.hpp"
 
 int test_debug_and_error() {
     puts("=== test_debug_and_error");
@@ -135,13 +137,10 @@ int test_mock_personData() {
  * 設計・実装はここから
 */
 
-// namespace cheshire {
 
 ConnectionPool<sql::Connection> app_cp;
 
 void mysql_connection_pool(const std::string& server, const std::string& user, const std::string& password, const int& sum);
-
-// }   // end namespace cheshire
 void mysql_connection_pool(const std::string& server, const std::string& user, const std::string& password, const int& sum) 
 {
     sql::Driver* driver = get_driver_instance();//MySQLDriver::getInstance().getDriver();
@@ -159,78 +158,7 @@ void mysql_connection_pool(const std::string& server, const std::string& user, c
 }
 
 
-/**
- * TODO ReadPersonCtl の宣言と定義
-*/
 
-class ReadPersonCtl final : public Controller<nlohmann::json> {
-public:
-    static Controller<nlohmann::json>* factory(const std::string& uri, const char* _json);
-    ReadPersonCtl(sql::Connection* _con, const nlohmann::json& _j);
-    ~ReadPersonCtl();
-    virtual nlohmann::json execute() const override;
-private:
-    mutable sql::Connection* rawCon = nullptr;
-    mutable nlohmann::json j;
-};
-
-Controller<nlohmann::json>* ReadPersonCtl::factory(const std::string& uri, const char* _json) 
-{
-    if(uri == "/api/read/person/" || uri == "/api/read/person") {
-        return new ReadPersonCtl(app_cp.pop(), nlohmann::json::parse(_json));
-    }
-    return nullptr;
-}
-ReadPersonCtl::ReadPersonCtl(sql::Connection* _con, const nlohmann::json& _j): rawCon(_con), j(_j)
-{}
-ReadPersonCtl::~ReadPersonCtl()
-{
-    if(rawCon) {
-        ptr_api_debug<const char*, const sql::Connection*>("rawCon addr is ", rawCon);
-        app_cp.push(rawCon);
-    }
-}
-nlohmann::json ReadPersonCtl::execute() const 
-{
-    puts("------ ReadPersonCtl::execute()");
-    try {
-        // TODO 実装
-        nlohmann::json result;
-        std::cout << j << std::endl;
-
-        std::unique_ptr<MySQLConnection>                    mcon = std::make_unique<MySQLConnection>(rawCon);
-        std::unique_ptr<Repository<PersonData,std::size_t>> repo = std::make_unique<PersonRepository>(PersonRepository(mcon.get()));                
-        for(auto v: j) {
-            std::size_t id = v.at("id");
-            std::unique_ptr<RdbProcStrategy<PersonData>> proc_strategy = std::make_unique<MySQLReadStrategy<PersonData,std::size_t>>(repo.get(), id);
-            MySQLTx tx(mcon.get(), proc_strategy.get());
-            std::optional<PersonData> after = tx.executeTx();
-            if(after.has_value()) {
-                if(after.value().getAge().has_value()) {        // この仕組みは良くない、複数 option があった場合対応できない。
-                    result["personData"] = {
-                        {"id", after.value().getId().getValue()}
-                        ,{"name", after.value().getName().getValue()}
-                        ,{"email", after.value().getEmail().getValue()}
-                        ,{"age", after.value().getAge().value().getValue()}
-                    };
-                } else {
-                    result["personData"] = {
-                        {"id", after.value().getId().getValue()}
-                        ,{"name", after.value().getName().getValue()}
-                        ,{"email", after.value().getEmail().getValue()}
-                    };
-                }
-            }
-        }        
-        // 返却と初期化
-        app_cp.push(rawCon);
-        rawCon = nullptr;
-        return result;
-    } catch(std::exception& e) {
-        ptr_api_error<const decltype(e)&>(e);
-        throw std::runtime_error(e.what());
-    }
-}
 
 /**
  * TODO UpdatePersonCtl の宣言と定義
