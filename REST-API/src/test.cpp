@@ -283,6 +283,16 @@ int test_ReadPersonCtl(std::size_t* pid) {
     }
 }
 
+int test_UpdatePersonCtl(std::size_t* pid) {
+    puts("=== test_UpdatePersonCtl");
+    try {
+        return EXIT_SUCCESS;
+    } catch(std::exception& e) {
+        ptr_api_error<const decltype(e)&>(e);
+        return EXIT_FAILURE;
+    }
+}
+
 int main(void) {
     puts("=== START Test");
     mysql_connection_pool("tcp://127.0.0.1:3306", "derek", "derek1234", 3);
@@ -305,6 +315,8 @@ int main(void) {
         ptr_api_debug<const char*, const std::size_t&>("pid is ", *pid);
         assert(*pid != 0);
         ptr_api_debug<const char*, const decltype(ret)&>("Play and Result ... ", ret = test_ReadPersonCtl(pid));
+        assert(ret == 0);
+        ptr_api_debug<const char*, const decltype(ret)&>("Play and Result ... ", ret = test_UpdatePersonCtl(pid));
         assert(ret == 0);
         ptr_api_debug<const char*, const decltype(ret)&>("Play and Result ... ", ret = test_DeletePersonCtl(pid));
         assert(*pid != 0);
