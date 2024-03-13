@@ -333,6 +333,13 @@ int test_ReadPersonCtl(std::size_t* pid) {
 int test_UpdatePersonCtl(std::size_t* pid) {
     puts("=== test_UpdatePersonCtl");
     try {
+        std::string str(R"({"personData":{"age":25,"email":"jojo2@loki.org","name":"JOJO","id":)");
+        str.append(" ").append(std::to_string(*pid)).append("}}");
+        std::cout << str << std::endl;
+        Controller<json>* ctl = UpdatePersonCtl::factory("/api/update/person/", str.c_str());
+        json result = ctl->execute();
+        std::cout << result << std::endl;
+        delete ctl;
         return EXIT_SUCCESS;
     } catch(std::exception& e) {
         ptr_api_error<const decltype(e)&>(e);
