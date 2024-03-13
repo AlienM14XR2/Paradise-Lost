@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <chrono>
 #include <fcgi_config.h>
 #include <fcgi_stdio.h>
 // REST
@@ -111,6 +112,7 @@ int main(void) {
         // json j = json::parse(rawJson);
         while(FCGI_Accept() >= 0)
         {
+            std::clock_t start_1 = clock();
             // printf("content-type:text/html\r\n");
             // printf("\r\n");
             // printf("<title>Fast CGI Hello</title>");
@@ -153,9 +155,6 @@ int main(void) {
                     free(buf);
                     buf = nullptr;
                 }
-                // if(ctl) {
-                //     delete ctl; ctl = nullptr;
-                // }
             } catch(std::exception& e) {
                 result["error"] = {
                     {"message", e.what()}
@@ -175,6 +174,8 @@ int main(void) {
             printf("\r\n");                                                 // \r\n 続けて書いても問題ないはず。
             if(!result.empty()) {
                 printf("%s\n",result.dump().c_str());
+                std::clock_t end_1 = clock();
+                std::cout << "passed " << (double)(end_1-start_1)/CLOCKS_PER_SEC << " sec." << std::endl;
             }
             /**
              * Exception Handling
