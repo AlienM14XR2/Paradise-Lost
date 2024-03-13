@@ -35,6 +35,7 @@
 #include "Controller.hpp"
 #include "CreatePersonCtl.hpp"
 #include "DeletePersonCtl.hpp"
+#include "ReadPersonCtl.hpp"
 // ORM
 #include "mysql/jdbc.h"
 #include "ConnectionPool.hpp"
@@ -112,7 +113,7 @@ int main(void) {
             // printf("<h1>fast CGI hello</h1>");
 
             /**
-             * JSON データ取得
+             * リクエスト JSON データ取得
             */
             char* contentLength = nullptr;
             char* buf = nullptr;
@@ -136,6 +137,8 @@ int main(void) {
             Controller<json>* ctl = nullptr;
             try {
                 ctl = CreatePersonCtl::factory(getenv("REQUEST_URI"), buf);
+                action(ctl, pret);
+                ctl = ReadPersonCtl::factory(getenv("REQUEST_URI"), buf);
                 action(ctl, pret);
                 ctl = DeletePersonCtl::factory(getenv("REQUEST_URI"), buf);
                 action(ctl, pret);
@@ -168,7 +171,7 @@ int main(void) {
                 printf("%s\n",result.dump().c_str());
             }
             /**
-             * TODO Exception Handling
+             * Exception Handling
              * 
              * Exception のハンドリングが必要だね。
              * json に エラーメッセージを入れて返却できればいいと思う。
