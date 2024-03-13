@@ -336,6 +336,7 @@ int main(void) {
         ptr_api_debug<const char*, const std::size_t&>("pid is ", *pid);
         assert(*pid != 0);
         ptr_api_debug<const char*, const decltype(ret)&>("Play and Result ... ", ret = test_ReadPersonCtl(pid));
+        assert(ret == 0);
         ptr_api_debug<const char*, const decltype(ret)&>("Play and Result ... ", ret = test_DeletePersonCtl(pid));
         assert(*pid != 0);
     }
