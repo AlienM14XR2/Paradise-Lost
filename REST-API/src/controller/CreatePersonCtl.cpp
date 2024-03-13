@@ -47,7 +47,7 @@ nlohmann::json CreatePersonCtl::execute() const
         std::unique_ptr<MySQLConnection>                    mcon = std::make_unique<MySQLConnection>(rawCon);
         std::unique_ptr<Repository<PersonData,std::size_t>> repo = std::make_unique<PersonRepository>(PersonRepository(mcon.get()));                
         std::unique_ptr<RdbDataStrategy<PersonData>>        strategy = std::make_unique<PersonStrategy>();
-        for(auto v: j) {
+        for(auto v: j) {        // この実装は JSON から必要な値を取得する部分と、PersonData 構築、Tx 実行を分けるべきだと思う。
             std::string name_  = v.at("name");
             std::string email_ = v.at("email");
             DataField<std::string> name("name", name_);
@@ -77,6 +77,7 @@ nlohmann::json CreatePersonCtl::execute() const
                         };
                 }
             }
+            break;
         }
         // 返却と初期化
         app_cp.push(rawCon);
