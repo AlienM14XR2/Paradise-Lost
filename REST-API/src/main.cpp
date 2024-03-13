@@ -17,6 +17,7 @@
  * e.g. curl でアクセス
  * curl -s -X POST -H "Content-Type: application/json; charset=UTF-8" -d '{"personData":{"id": 60}}' http://localhost/api/delete/person/
  * curl -s -X POST -H "Content-Type: application/json; charset=UTF-8" -d '{"personData":{"id": 80}}' http://localhost/api/read/person/
+ * curl -s -X POST -H "Content-Type: application/json; charset=UTF-8" -d '{"personData":{"age":37,"email":"dodo2@loki.org","name":"DODO", "id": 100}}' http://localhost/api/update/person/
  * curl -s -X POST -H "Content-Type: application/json; charset=UTF-8" -d '{"personData":{"age":36,"email":"dodo@loki.org","name":"Dodo"}}' http://localhost/api/create/person/
  * 
 */
@@ -38,6 +39,7 @@
 #include "CreatePersonCtl.hpp"
 #include "DeletePersonCtl.hpp"
 #include "ReadPersonCtl.hpp"
+#include "UpdatePersonCtl.hpp"
 // ORM
 #include "mysql/jdbc.h"
 #include "ConnectionPool.hpp"
@@ -141,6 +143,8 @@ int main(void) {
                 ctl = CreatePersonCtl::factory(getenv("REQUEST_URI"), buf);
                 action(ctl, pret);
                 ctl = ReadPersonCtl::factory(getenv("REQUEST_URI"), buf);
+                action(ctl, pret);
+                ctl = UpdatePersonCtl::factory(getenv("REQUEST_URI"), buf);
                 action(ctl, pret);
                 ctl = DeletePersonCtl::factory(getenv("REQUEST_URI"), buf);
                 action(ctl, pret);
