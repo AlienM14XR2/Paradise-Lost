@@ -15,6 +15,7 @@
  * 
  * e.g. curl でアクセス
  * curl -s -X POST -H "Content-Type: application/json; charset=UTF-8" -d '{"personData":{"id": 60}}' http://localhost/api/delete/person/
+ * curl -s -X POST -H "Content-Type: application/json; charset=UTF-8" -d '{"personData":{"id": 80}}' http://localhost/api/read/person/
  * curl -s -X POST -H "Content-Type: application/json; charset=UTF-8" -d '{"personData":{"age":36,"email":"dodo@loki.org","name":"Dodo"}}' http://localhost/api/create/person/
  * 
 */
