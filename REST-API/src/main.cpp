@@ -72,9 +72,11 @@ void mysql_connection_pool(const std::string& server, const std::string& user, c
 
 void mysqlx_session_pool(const std::string& server, const int& port, const std::string& user, const std::string& passwd, const int& sum)
 {
-    puts("=== mysqlx_session_pool");
+    // puts("=== mysqlx_session_pool");
+    ptr_api_debug<const char*, const int&>("=== mysqlx_session_pool", 0);
     for(int i=0; i<sum; i++) {
-        puts("connected ... ");
+        // puts("connected ... ");
+        ptr_api_debug<const char*, const int&>("connected ... ", 0);
         app_sp.push(new mysqlx::Session(server, port, user, passwd));
     }
 }
@@ -120,6 +122,7 @@ int main(void) {
     std::cout << "START REST API" << std::endl;
     try {
         mysql_connection_pool("tcp://127.0.0.1:3306", "derek", "derek1234", 3);
+        mysqlx_session_pool("localhost", 33060, "derek", "derek1234", 3);
         // int count = 0;      // これが答えだったか、何らかのオブジェクトを Pool するならここで行い
         // json j = json::parse(rawJson);
         while(FCGI_Accept() >= 0)
@@ -154,7 +157,8 @@ int main(void) {
             json* pret = &result;
             Controller<json>* ctl = nullptr;
             try {
-                ctl = CreatePersonCtl::factory(getenv("REQUEST_URI"), buf);
+                // ctl = CreatePersonCtl::factory(getenv("REQUEST_URI"), buf);
+                ctl = ctlx::CreatePersonCtl::factory(getenv("REQUEST_URI"), buf);
                 action(ctl, pret);
                 ctl = ReadPersonCtl::factory(getenv("REQUEST_URI"), buf);
                 action(ctl, pret);
