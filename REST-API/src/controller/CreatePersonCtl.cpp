@@ -119,5 +119,13 @@ nlohmann::json ctlx::CreatePersonCtl::execute() const
 {
     puts("------ ctlx::CreatePersonCtl::execute()");
     // TODO 実装
-    return nlohmann::json();
+    nlohmann::json result;
+    std::cout << j << std::endl;
+
+    // JSON から必要な値を取得する
+
+    // MySQLXTx の構築
+
+    // レスポンス用 JSON の作成
+    return result;
 }
