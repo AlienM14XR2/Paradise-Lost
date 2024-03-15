@@ -14,7 +14,8 @@
 #include "RdbProcStrategy.hpp"
 #include "MySQLCreateStrategy.hpp"
 #include "MySQLTx.hpp"
-
+#include "MySQLXTx.hpp"
+#include "MySQLXCreateStrategy.hpp"
 
 
 extern ConnectionPool<sql::Connection> app_cp;
@@ -118,14 +119,55 @@ ctlx::CreatePersonCtl::~CreatePersonCtl()
 nlohmann::json ctlx::CreatePersonCtl::execute() const 
 {
     puts("------ ctlx::CreatePersonCtl::execute()");
-    // TODO 実装
-    nlohmann::json result;
-    std::cout << j << std::endl;
+    try {
+        // 実装
+        nlohmann::json result;
+        std::cout << j << std::endl;
 
-    // JSON から必要な値を取得する
-
-    // MySQLXTx の構築
-
-    // レスポンス用 JSON の作成
-    return result;
+        std::string name;
+        std::string email;
+        int age = -1;
+        // JSON から必要な値を取得する
+        for(auto v: j) {
+            name = v.at("name");
+            email = v.at("email");
+            auto age_ = v.at("age");
+            if(!age_.is_null()) {
+                age = v.at("age");
+            }
+        }
+        // ormx::PersonData 構築
+        ormx::PersonData person = ormx::PersonData::dummy();
+        if(age != -1) {
+            person = ormx::PersonData(name, email, age);
+        } else {
+            person = ormx::PersonData(name, email);
+        }
+        // MySQLXTx の構築
+        std::unique_ptr<Repository<ormx::PersonData, std::size_t>>        repo = std::make_unique<ormx::PersonRepository>(rawSession);
+        std::unique_ptr<RdbProcStrategy<ormx::PersonData>>        procStrategy = std::make_unique<ormx::MySQLXCreateStrategy<ormx::PersonData, std::size_t>>(repo.get(), person);
+        ormx::MySQLXTx tx(rawSession, procStrategy.get());
+        std::optional<ormx::PersonData> after = tx.executeTx();
+        // レスポンス用 JSON の作成
+        if(after.has_value()) {
+            if(after.value().getAge().has_value()) {
+                result["personData"] = {
+                    {"id", after.value().getId()}
+                    ,{"name", after.value().getName()}
+                    ,{"email", after.value().getEmail()}
+                    ,{"age", after.value().getAge().value()}
+                };
+            } else {
+                result["personData"] = {
+                    {"id", after.value().getId()}
+                    ,{"name", after.value().getName()}
+                    ,{"email", after.value().getEmail()}
+                };
+            }
+        }
+        return result;
+    } catch(std::exception& e) {
+        ptr_api_error<const decltype(e)&>(e);
+        throw std::runtime_error(e.what());
+    }
 }

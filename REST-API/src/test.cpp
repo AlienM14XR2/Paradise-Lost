@@ -278,6 +278,11 @@ int test_UpdatePersonCtl(std::size_t* pid) {
 int test_ctlx_CreatePersonCtl() {
     puts("=== test_ctlx_CreatePersonCtl");
     try {
+        const char* cj = R"({"personData":{"age":21,"email":"fc3s@loki.org","name":"R スケ"}})";
+        Controller<json>* ctl = ctlx::CreatePersonCtl::factory("/api/create/person/", cj);
+        json result = ctl->execute();
+        std::cout << result << std::endl;
+        delete ctl;
         return EXIT_SUCCESS;
     } catch(std::exception& e) {
         ptr_api_error<const decltype(e)&>(e);
