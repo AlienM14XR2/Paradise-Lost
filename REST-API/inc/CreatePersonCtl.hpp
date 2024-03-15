@@ -16,4 +16,15 @@ private:
     mutable nlohmann::json j;
 };
 
+/**
+ * 以下
+ * namespace ctlx
+ * O/R Mapping において、mysqlx::Session を利用した データアクセスに対応した
+ * コントローラー
+*/
+
+namespace ctlx {
+
+}
+
 #endif
