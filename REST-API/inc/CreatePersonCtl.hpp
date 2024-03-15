@@ -4,6 +4,7 @@
 #include "Controller.hpp"
 #include "nlohmann/json.hpp"
 #include "mysql/jdbc.h"
+#include "mysqlx/xdevapi.h"
 
 class CreatePersonCtl final : public Controller<nlohmann::json> {
 public:
@@ -25,6 +26,17 @@ private:
 
 namespace ctlx {
 
-}
+class CreatePersonCtl final : public Controller<nlohmann::json> {
+public:
+    static Controller<nlohmann::json>* factory(const std::string& uri, const char* _json);
+    CreatePersonCtl(mysqlx::Session* _session, const nlohmann::json& _j);
+    ~CreatePersonCtl();
+    virtual nlohmann::json execute() const override;
+private:
+    mutable mysqlx::Session* rawSession = nullptr;
+    mutable nlohmann::json j;
+};
+
+}   // namespace ctlx
 
 #endif

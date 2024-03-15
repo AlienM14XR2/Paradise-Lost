@@ -16,6 +16,7 @@
 #include <nlohmann/json.hpp>
 // ORM
 #include "mysql/jdbc.h"
+#include "mysqlx/xdevapi.h"
 #include "ConnectionPool.hpp"
 #include "DataField.hpp"
 #include "PersonData.hpp"
@@ -136,14 +137,24 @@ int test_mock_personData() {
     }
 }
 
+
+
+
+
+
 /**
  * 設計・実装はここから
 */
 
 
-ConnectionPool<sql::Connection> app_cp;
 
-void mysql_connection_pool(const std::string& server, const std::string& user, const std::string& password, const int& sum);
+
+
+
+
+ConnectionPool<sql::Connection> app_cp;
+ConnectionPool<mysqlx::Session> app_sp("mysqlx::Session.");
+
 void mysql_connection_pool(const std::string& server, const std::string& user, const std::string& password, const int& sum) 
 {
     sql::Driver* driver = get_driver_instance();//MySQLDriver::getInstance().getDriver();
@@ -160,6 +171,14 @@ void mysql_connection_pool(const std::string& server, const std::string& user, c
     }
 }
 
+void mysqlx_session_pool(const std::string& server, const int& port, const std::string& user, const std::string& passwd, const int& sum)
+{
+    puts("=== mysqlx_session_pool");
+    for(int i=0; i<sum; i++) {
+        puts("connected ... ");
+        app_sp.push(new mysqlx::Session(server, port, user, passwd));
+    }
+}
 
 
 
@@ -256,9 +275,20 @@ int test_UpdatePersonCtl(std::size_t* pid) {
     }
 }
 
+int test_ctlx_CreatePersonCtl() {
+    puts("=== test_ctlx_CreatePersonCtl");
+    try {
+        return EXIT_SUCCESS;
+    } catch(std::exception& e) {
+        ptr_api_error<const decltype(e)&>(e);
+        return EXIT_FAILURE;
+    }
+}
+
 int main(void) {
     puts("=== START Test");
     mysql_connection_pool("tcp://127.0.0.1:3306", "derek", "derek1234", 3);
+    mysqlx_session_pool("localhost", 33060, "derek", "derek1234", 3);
     if(0.01) {
         auto ret = 0;
         ptr_api_debug<const char*, const decltype(ret)&>("Play and Result ... ", ret = test_debug_and_error());
@@ -283,6 +313,11 @@ int main(void) {
         assert(ret == 0);
         ptr_api_debug<const char*, const decltype(ret)&>("Play and Result ... ", ret = test_DeletePersonCtl(pid));
         assert(*pid != 0);
+    }
+    if(1.01) {      // ormx 対応
+        auto ret = 0;
+        ptr_api_debug<const char*, const decltype(ret)&>("Play and Result ... ", ret = test_ctlx_CreatePersonCtl());
+        assert(ret == 0);
     }
     puts("END   Test === ");    
 }

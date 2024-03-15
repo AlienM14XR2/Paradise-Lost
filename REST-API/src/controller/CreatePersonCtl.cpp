@@ -18,6 +18,7 @@
 
 
 extern ConnectionPool<sql::Connection> app_cp;
+extern ConnectionPool<mysqlx::Session> app_sp;
 
 Controller<nlohmann::json>* CreatePersonCtl::factory(const std::string& uri, const char* _json)
 {
@@ -91,3 +92,32 @@ nlohmann::json CreatePersonCtl::execute() const
 }
 
 
+/**
+ * 以下
+ * namespace ctlx
+ * 定義
+*/
+
+Controller<nlohmann::json>* ctlx::CreatePersonCtl::factory(const std::string& uri, const char* _json)
+{
+    if(uri == "/api/create/person/" || uri == "/api/create/person") {
+        return new ctlx::CreatePersonCtl(app_sp.pop(), nlohmann::json::parse(_json));
+    }
+    return nullptr;
+}
+ctlx::CreatePersonCtl::CreatePersonCtl(mysqlx::Session* _session, const nlohmann::json& _j): rawSession(_session), j(_j)
+{}
+ctlx::CreatePersonCtl::~CreatePersonCtl()
+{
+    if(rawSession) {
+        ptr_api_debug<const char*, const mysqlx::Session*>("rawSession addr is ", rawSession);
+        app_sp.push(rawSession);
+    }
+}
+// ...
+nlohmann::json ctlx::CreatePersonCtl::execute() const 
+{
+    puts("------ ctlx::CreatePersonCtl::execute()");
+    // TODO 実装
+    return nlohmann::json();
+}
