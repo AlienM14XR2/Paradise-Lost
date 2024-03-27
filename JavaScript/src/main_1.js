@@ -1,6 +1,17 @@
 (function() {
 "use strict";
 console.log("START ===");
+
+var btnYTube = document.getElementById("btn_youtube");
+var onClickYTube = function() {
+    console.log("youTube button is clicked.");
+}
+btnYTube.addEventListener("click",onClickYTube);
+
+var aSearch = document.getElementById("a_search");
+console.log(aSearch.href);
+
+
 /**
  * プロック文 {}
  * let および const の宣言は、宣言されたブロック文のスコープになることもあります。
